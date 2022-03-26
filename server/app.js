@@ -41,7 +41,8 @@ app.options("/*", async (req, res) => {
 });
 
 app.put("/*", async (req, res) => {
-  await fs.writeFile(`public${req.path}`, req.body, "utf8");
+  const filename = req.path.replace('/wiki', './data')+'.html';
+  await fs.writeFile(filename, req.body, "utf8");
   res.status(200).send();
 });
 
