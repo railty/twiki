@@ -1,9 +1,17 @@
 import moment from "moment";
 import { useAppContext } from "./AppContext";
 import Account from "./account";
+import {QRCodeSVG} from 'qrcode.react';
+import {Html5QrcodeScanner} from "html5-qrcode"
+import {Html5Qrcode} from "html5-qrcode"
+import QRScanner from "./QRScanner";
+import { useState } from "react";
+import EditBox from "./EditBox";
 
 function Content() {
   const [ state, dispatch ] = useAppContext();
+
+  const [bImport, setBImport] = useState(false);
 
   const generate = (index)=>{
     const account = Account.generateAccount();
@@ -26,8 +34,15 @@ function Content() {
       type: "signIn_account",
       value: {index: index, jwt: jwt.jwt, iat: jwt.iat} 
     });
-     
   };
+
+  const setActName = async (index, name)=>{
+    dispatch({
+      type: "rename_account_name",
+      value: {index: index, name: name} 
+    });
+  };
+
 
   const access = async (act) => {
     const frm = document.createElement("FORM");
@@ -57,19 +72,36 @@ function Content() {
     }
   }
 
+  const scan = ()=>{
+    let html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
+      fps: 10, 
+      qrbox: {width: 250, height: 250} 
+    }, false); //verbose=false
+
+    html5QrcodeScanner.render( (decodedText, decodedResult) => {
+      console.log(`Code matched = ${decodedText}`, decodedResult);
+      setBImport(false);
+    }, (error) => {
+      if (errpr != "Code scan error = QR code parse error, error = NotFoundException: No MultiFormat Readers were able to detect the code."){
+        console.warn(`Code scan error = ${error}`);
+      }
+    });
+    setBImport(true);
+  }
+
   return (
     <div className="card w-full bg-base-100 shadow-xl">
       <div className="card-body">
         
-        <button className="btn btn-primary btn-sm" onClick={test}>Test</button>
-
         <table className="table table-compact table-zebra">
           <thead></thead>
           <tbody>
             {state.accounts.map((act, i)=>{
               return (
               <tr key={i}>
-                <td>{act.name}</td>
+                <td>
+                  <EditBox value={act.name} setValue={(v)=>{setActName(i, v)}} />
+                </td>
                 <td>
                   {act.addr ? (
                     <button className="btn btn-primary btn-sm" onClick={()=>signin(i)}>Signin</button>
@@ -89,6 +121,22 @@ function Content() {
                 </td>
 
                 <td>
+                  <button className="btn btn-primary btn-sm" onClick={()=>scan()}>Scan</button>
+                </td>
+
+                <td>
+                  <label htmlFor="my-modal" className="btn btn-primary btn-sm modal-button">QR</label>
+                  <input type="checkbox" id="my-modal" className="modal-toggle" />
+                  <div className="modal">
+                    <div className="modal-box relative w-96 h-96">
+                      <label htmlFor="my-modal" className="btn btn-sm btn-circle absolute right-2 top-2">✕</label>
+                      <QRCodeSVG value={act.sk} size="300" />    
+                    </div>
+                  </div>
+
+                </td>
+
+                <td>
                   {moment(act.iat*1000).fromNow()}
                 </td>
 
@@ -96,6 +144,15 @@ function Content() {
             })}
           </tbody>
         </table>
+        
+        <input type="checkbox" id="qrscan" className="modal-toggle" checked={bImport} onChange={()=>{}}/>
+        <div className="modal">
+          <div className="modal-box relative w-96 h-96 p-8">
+            <label htmlFor="qrscan" className="btn btn-sm btn-circle absolute right-2 top-2" onClick={()=>{setBImport(false)}}>✕</label>
+            <div id="reader" className="mt-4 w-80"></div>    
+          </div>
+        </div>
+
       </div>
     </div>
   );

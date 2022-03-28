@@ -28,6 +28,14 @@ export const AppReducer = (state, action) => {
         accounts: state.accounts
       }
     }
+
+    case "rename_account_name": {
+      state.accounts[action.value.index].name = action.value.name;
+      return {
+        ...state,
+        accounts: state.accounts
+      }
+    }
     
     case "signIn_account": {
       state.accounts[action.value.index].jwt = action.value.jwt;
